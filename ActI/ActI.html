@@ -18,13 +18,14 @@
         /* Scene Rendering */
         #court-scene { 
             width: 100vw; height: 50vh; position: relative; 
-            background: url('../Files/courtroom.jpg') no-repeat center center; /* FIXED PATH AND CASE */
+            background: url('../Files/courtroom.jpg') no-repeat center center; 
             background-size: cover; display: flex; justify-content: center; 
             align-items: flex-end; border-bottom: 8px solid #3d2b1f; overflow: hidden; 
         }
         #court-scene.verdict-mode { background-image: url('../Files/verdictbg.jpg') !important; }
 
         .sprite { position: absolute; bottom: -5px; height: 95%; width: auto; transition: 0.3s; opacity: 0.4; filter: grayscale(1); z-index: 5; pointer-events: none; }
+        /* Player (Plaintiff) on the Left for Case I */
         #plaintiff { left: 5%; } #defendant { right: 5%; }
         .sprite.active { opacity: 1; filter: grayscale(0); transform: scale(1.05); z-index: 10; }
 
@@ -48,7 +49,11 @@
         /* Screens & Modal */
         #start-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: #1a1a1a; border: 15px solid var(--pla-gold); box-sizing: border-box; }
         
-        /* FIXED: Consolidated #end-screen CSS */
+        .btn-gold { background: var(--pla-gold); color: black; border: none; padding: 15px 40px; font-weight: bold; cursor: pointer; font-size: 18px; margin-top: 15px; }
+        
+        #case-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 85%; background: #111; border: 5px solid var(--pla-gold); z-index: 6000; padding: 30px; box-sizing: border-box; overflow-y: auto; text-align: left; line-height: 1.6; }
+   
+        /* Consolidated End Screen CSS */
         #end-screen {
             position: fixed;
             top: 0;
@@ -60,12 +65,7 @@
             justify-content: center;
             align-items: center;
             z-index: 20000;
-            text-align: center; /* Added for consistency */
         }
-
-        .btn-gold { background: var(--pla-gold); color: black; border: none; padding: 15px 40px; font-weight: bold; cursor: pointer; font-size: 18px; margin-top: 15px; }
-        
-        #case-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 85%; background: #111; border: 5px solid var(--pla-gold); z-index: 6000; padding: 30px; box-sizing: border-box; overflow-y: auto; text-align: left; line-height: 1.6; }
 
         .end-bg {
             position: absolute;
@@ -73,7 +73,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; 
+            object-fit: cover;
             z-index: 1;
             display: none;
             filter: brightness(0.4); 
@@ -91,6 +91,7 @@
 
     <div id="case-modal">
         <h3 style="color: var(--pla-gold); margin-top: 0;">CASE I - CIR v. X PAWNSHOP, INC.</h3>
+        
         <p>X Pawnshop, Inc. contends that it is the document evidencing a pledge of personal property which is subject to the DST. A pawn ticket is defined under Section 3 of PD 114 as "the pawnbroker's receipt for a pawn and is neither a security nor a printed evidence of indebtedness."</p>
         <p>X Pawnshop, Inc. argues that since the document taxable under Section 195 must show the existence of a debt, a pawn ticket which is merely a receipt for a pawn is not subject to DST.</p>
         <p>X Pawnshop, Inc. further contends that the DST is imposed on the documents issued, not the "transactions so had or accomplished." It insists that the document to be taxed under the transaction contemplated should be the pledge agreement, if any is issued, not the pawn ticket.</p>
@@ -101,14 +102,13 @@
 
     <audio id="bgMusic" loop><source src="../Files/bgmusic.mp3" type="audio/mpeg"></audio>
     <audio id="verdictBgm"><source src="../Files/verdictbgm.mp3" type="audio/mpeg"></audio>
-    
     <div id="verdict-stamp"></div>
 
     <div id="end-screen">
         <img id="win-img" class="end-bg" src="../Files/suits.jpg" alt="Winner">
         <img id="loss-img" class="end-bg" src="../Files/louis.jpg" alt="Loser">
         
-        <div style="z-index: 2; position: relative; background: rgba(0,0,0,0.6); padding: 40px; border-radius: 15px;">
+        <div style="z-index: 2; position: relative; background: rgba(0,0,0,0.6); padding: 40px; border-radius: 15px; text-align: center;">
             <h1 id="end-title" style="font-size: 60px; margin: 0;">VERDICT</h1>
             <h2 id="win-loss-text"></h2>
             <div style="font-size: 24px; color: var(--pla-gold); margin-bottom: 20px;">FINAL SCORE: <span id="final-points">0</span></div>
@@ -273,6 +273,8 @@
         const jFrame = document.getElementById('judge-frame');
         tag.innerText = name;
         pla.classList.remove('active'); def.classList.remove('active'); jFrame.classList.remove('active');
+        
+        // Colors mapped correctly to Case I (Player is Plaintiff)
         if (name === "JUDGE") { tag.style.background = "var(--judge-purple)"; if (!jFrame.classList.contains('active')) playBlip(); jFrame.classList.add('active'); }
         else if (name === "PLAINTIFF") { tag.style.background = "var(--pla-gold)"; if (!pla.classList.contains('active')) playBlip(); pla.classList.add('active'); }
         else { tag.style.background = "var(--def-blue)"; if (!def.classList.contains('active')) playBlip(); def.classList.add('active'); }
