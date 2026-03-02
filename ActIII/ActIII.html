@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case III</title>
+    <style>
+        :root { --pla-gold: #d4af37; --def-blue: #2c3e50; --ace-red: #cc0000; --win-green: #26890c; --judge-purple: #4b0082; }
+        body { margin: 0; background: #000; color: white; font-family: 'Courier New', Courier, monospace; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+
+        /* UI */
+        #top-bar { position: absolute; top: 20px; width: 95%; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        #health-container { width: 200px; height: 20px; border: 3px solid white; background: #333; }
+        #health-bar { width: 100%; height: 100%; background: var(--pla-gold); transition: width 0.5s; }
+        #timer-container { position: absolute; top: 60px; right: 20px; width: 200px; height: 12px; background: #222; border: 1px solid #fff; display: none; }
+        #timer-bar { width: 100%; height: 100%; background: var(--ace-red); }
+
+        /* Scene Rendering */
+        #court-scene { 
+            width: 100vw; height: 50vh; position: relative; 
+            background: url('../Files/courtjjk.jpg') no-repeat center center; 
+            background-size: cover; display: flex; justify-content: center; 
+            align-items: flex-end; border-bottom: 8px solid #3d2b1f; overflow: hidden; 
+        }
+        #court-scene.verdict-mode { background-image: url('Files/verdictbg.jpg') !important; }
+
+        .sprite { position: absolute; bottom: -5px; height: 95%; width: auto; transition: 0.3s; opacity: 0.4; filter: grayscale(1); z-index: 5; pointer-events: none; }
+        #plaintiff { left: 5%; } #defendant { right: 5%; }
+        .sprite.active { opacity: 1; filter: grayscale(0); transform: scale(1.05); z-index: 10; }
+
+        #judge-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -150%); width: 300px; height: 300px; border: 5px solid var(--pla-gold); transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 150; opacity: 0; pointer-events: none; }
+        #judge-frame.active { transform: translate(-50%, -55%); opacity: 1; }
+        #judge-img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* Verdict Stamp */
+        #verdict-stamp { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%) scale(5); font-size: 80px; font-weight: 900; z-index: 1000; opacity: 0; display: none; text-shadow: 4px 4px #000; pointer-events: none; }
+        .stamp-anim { display: block !important; animation: stampIn 0.5s forwards; }
+        @keyframes stampIn { 0% { transform: translate(-50%, -50%) scale(5); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+
+        /* Dialogue */
+        #dialogue-area { width: 95%; height: 43vh; background: rgba(0,0,0,0.95); border: 4px solid #fff; margin-top: 10px; padding: 25px; box-sizing: border-box; position: relative; cursor: pointer; z-index: 200; }
+        #speaker-tag { position: absolute; top: -30px; left: 20px; padding: 5px 25px; font-weight: bold; font-size: 22px; border: 3px solid #fff; }
+        #text { font-size: 18px; line-height: 1.5; margin-top: 10px; }
+        #choices { display: none; flex-direction: column; gap: 8px; margin-top: 5px; }
+        .choice-btn { background: #111; border: 1px solid #fff; color: #fff; padding: 12px; cursor: pointer; text-align: left; font-family: inherit; }
+        #skip-btn { position: absolute; bottom: 10px; right: 10px; padding: 10px 20px; background: #444; border: 2px solid white; color: white; cursor: pointer; font-size: 14px; z-index: 1000; }
+
+        /* Screens & Modal */
+        #start-screen, #end-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: #1a1a1a; border: 15px solid var(--pla-gold); box-sizing: border-box; }
+        #end-screen { display: none; z-index: 20000; background: #000; }
+        .btn-gold { background: var(--pla-gold); color: black; border: none; padding: 15px 40px; font-weight: bold; cursor: pointer; font-size: 18px; margin-top: 15px; }
+        
+        #case-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 85%; background: #111; border: 5px solid var(--pla-gold); z-index: 6000; padding: 30px; box-sizing: border-box; overflow-y: auto; text-align: left; line-height: 1.6; }
+        #case-modal img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+    
+         #end-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+        }
+
+        .end-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* This makes it fill the screen like a wallpaper */
+            z-index: 1;
+            display: none;
+            filter: brightness(0.4); /* Makes the image darker so text is easier to read */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1 style="color: var(--pla-gold); font-size: 40px;">Case III</h1>
+        <h2 style="color: white; margin-bottom: 10px;">H. & W., Higuruma v. J. & L., Sukuna</h2>
+        <button class="btn-gold" onclick="startGame()">Start Trial</button>
+        <button class="btn-gold" style="background: #fff;" onclick="toggleCaseModal(true)">Case File</button>
+    </div>
+
+    <div id="case-modal">
+    <h3 style="color: var(--pla-gold); margin-top: 0;">Case III - H. & W., Higuruma v. J. & L., Sukuna</h3>
+    <p>May 25, 1988: H and W purchased a house and lot on installment from spouses J and L. The property was covered by Transfer Certificate of Title (TCT) No. 3250 in the name of J.</p>
+    <p>July 1988: A Deed of Absolute Sale was executed. J and L bound themselves to deliver the title, free from liens and encumbrances, within 15 days from full payment. They informed H and W that the lot was still under a mother title and promised to give the separate title after construction was completed.</p>
+    <p>August 1988: The keys to the property were delivered to H and W. They moved in, applied for a telephone connection, and insured the house. </p>
+    <p>June 15, 1989: Despite having already sold the property to H and W, J and L mortgaged the property to F Corp. for P250,000.</p>
+    <p>October 23, 1990: H and W filed a case for Quieting of Title and Specific Performance against J and L.</p>
+    <p>October 7, 1992: F Corp. foreclosed on the property, allegedly in defiance of a Writ of Preliminary Injunction issued by the lower court. F Corp. was the highest bidder at the public auction.</p>
+    <p>After the auction: Due to J and L's failure to redeem the property, F Corp. executed an Affidavit of Consolidation and secured Certificate of Title No. 69049 in its name.</p>
+    <p style="font-weight: bold; color: var(--pla-gold);">PLAYER - PLAINTIFF: H. & W, Higuruma</p>
+    <button class="btn-gold" onclick="toggleCaseModal(false)">Close File</button>
+    </div>
+
+    <audio id="bgMusic" loop><source src="../Files/bgmusicjjk.mp3" type="audio/mpeg"></audio>
+    <audio id="verdictBgm"><source src="../Files/verdictbgmjjk.mp3" type="audio/mpeg"></audio>
+    <div id="verdict-stamp"></div>
+
+    <div id="end-screen">
+    <img id="win-img" class="end-bg" src="../Files/winjjk.jpg" alt="Winner">
+    <img id="loss-img" class="end-bg" src="../Files/losejjk.jpg" alt="Loser">
+    
+    <div style="z-index: 2; position: relative; background: rgba(0,0,0,0.6); padding: 40px; border-radius: 15px;">
+        <h1 id="end-title" style="font-size: 60px; margin: 0;">VERDICT</h1>
+        <h2 id="win-loss-text"></h2>
+        <div style="font-size: 24px; color: var(--pla-gold); margin-bottom: 20px;">FINAL SCORE: <span id="final-points">0</span></div>
+        <button class="btn-gold" style="background: #fff;" onclick="window.location.href='../index.html'">Menu</button>
+    </div>
+    </div>
+
+    <div id="top-bar">
+        <div style="font-size: 24px; color: var(--pla-gold);">SCORE: <span id="score-val">0</span></div>
+        <div id="health-container"><div id="health-bar"></div></div>
+    </div>
+    <div id="timer-container"><div id="timer-bar"></div></div>
+
+    <div id="court-scene">
+        <div id="judge-frame"><img id="judge-img" src="../Files/judgeman.png" alt="Judge"></div>
+        <img id="plaintiff" class="sprite" src="../Files/Jan.png" alt="Jan">
+        <img id="defendant" class="sprite" src="../Files/Ely.png" alt="Ely">
+    </div>
+
+    <div id="dialogue-area" onclick="handleInput()">
+        <div id="speaker-tag">JUDGE</div>
+        <div id="text">...</div>
+        <div id="choices"></div>
+        <button id="skip-btn" onclick="event.stopPropagation(); skipDialogue()">SKIP</button>
+    </div>
+
+<script>
+    function toggleCaseModal(show) { document.getElementById('case-modal').style.display = show ? 'block' : 'none'; }
+
+    const music = document.getElementById('bgMusic');
+    const vMusic = document.getElementById('verdictBgm');
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    let health = 100; let score = 0; let currentIdx = -1; 
+    let isTyping = false; let gameState = "start"; 
+    let timerInterval = null; let timeLeft = 100;
+    let typeIntv = null; let fullTxt = "";
+
+    const script = [
+        { name: "DEFENDANT", text: "Your Honor, they don't even understand the basics of a real estate mortgage!" },
+        { name: "PLAINTIFF", text: "What kind of property is legally subject to the real estate mortgage F Corp is trying to enforce against your home?",
+            choices: [
+                { text: "Immovable property or alienable real rights imposed upon immovables.", correct: true, note: "JUDICIAL VERDICT: Correct. A real estate mortgage secures an obligation by subjecting immovable property or real rights to it." },
+                { text: "Movable or personal property.", correct: false, note: "JUDICIAL VERDICT: Incorrect. Real estate mortgages strictly apply to immovables and alienable real rights." }
+            ]
+        },
+        { name: "DEFENDANT", text: "When a mortgage is valid, the creditor takes immediate physical control! You have no right to be there!" },
+        { name: "PLAINTIFF", text: "J and L used the house you already occupied as collateral. In a valid real estate mortgage, who generally retains physical possession of the property?",
+            choices: [
+                { text: "The mortgagor generally retains possession of the property.", correct: true, note: "JUDICIAL VERDICT: Correct. Unlike a pledge, the mortgagor keeps possession in a real estate mortgage." },
+                { text: "The creditor takes immediate possession.", correct: false, note: "JUDICIAL VERDICT: Wrong. The mortgagor retains possession of the property mortgaged as security." }
+            ]
+        },
+        { name: "DEFENDANT", text: "Our mortgage contract with F Corp stands entirely on its own! It's a primary agreement!" },
+        { name: "PLAINTIFF", text: "F Corp might argue their mortgage contract stands on its own. What is the actual legal character of a real estate mortgage?",
+            choices: [
+                { text: "It is an accessory and subsidiary contract.", correct: true, note: "JUDICIAL VERDICT: Correct. It only exists to secure the fulfillment of a principal obligation." },
+                { text: "It is a principal contract.", correct: false, note: "JUDICIAL VERDICT: Incorrect. A mortgage cannot exist without a principal obligation to secure." }
+            ]
+        },
+        { name: "DEFENDANT", text: "Even if it wasn't registered, our mortgage still legally binds everyone!" },
+        { name: "PLAINTIFF", text: "If F Corp had failed to register this mortgage, how would it legally affect you as the prior buyers of the property?",
+            choices: [
+                { text: "Buyers or transferees are not affected by an unregistered mortgage.", correct: true, note: "JUDICIAL VERDICT: Correct. Registration is required to bind third parties." },
+                { text: "You are bound by the foreclosure sale.", correct: false, note: "JUDICIAL VERDICT: Wrong. An unregistered mortgage only binds the parties to the contract, not innocent third parties." }
+            ]
+        },
+        { name: "DEFENDANT", text: "Our registered mortgage gives F Corp absolute power over the property's fruits!" },
+        { name: "PLAINTIFF", text: "F Corp argues their registered mortgage gives them absolute power. What does a validly constituted mortgage actually create?",
+            choices: [
+                { text: "It creates a real right and a lien inseparable from the property.", correct: true, note: "JUDICIAL VERDICT: Correct. It creates a lien enforceable against the whole world." },
+                { text: "A direct right to the fruits.", correct: false, note: "JUDICIAL VERDICT: Incorrect. A mortgage creates a real right and a lien, not an automatic right to fruits." }
+            ]
+        },
+        { name: "DEFENDANT", text: "J and L could mortgage the property to F Corp even if they had already sold it!" },
+        { name: "PLAINTIFF", text: "Can J and L validly mortgage the property to F Corp if they had already sold it to H and W?",
+            choices: [
+                { text: "No, because the mortgagor must be the owner at the time it is constituted.", correct: true, note: "JUDICIAL VERDICT: Correct. Ownership at the time of constitution is a strict requisite for a valid mortgage." },
+                { text: "Yes, because a mortgage may still be constituted if they are no longer owners.", correct: false, note: "JUDICIAL VERDICT: Wrong. A mortgagor must have free disposal and ownership of the property." }
+            ]
+        },
+        { name: "DEFENDANT", text: "The foreclosure is valid because the court approved it, regardless of the mortgage's origin!" },
+        { name: "PLAINTIFF", text: "Can the foreclosure filed by F Corp be valid if the mortgage itself was void from the beginning?",
+            choices: [
+                { text: "No, because a void mortgage produces no legal effect.", correct: true, note: "JUDICIAL VERDICT: Correct. A void mortgage cannot be the basis of a valid foreclosure sale." },
+                { text: "Yes, because court approval automatically validates the mortgage.", correct: false, note: "JUDICIAL VERDICT: Incorrect. A void contract cannot be validated by foreclosure." }
+            ]
+        },
+        { name: "DEFENDANT", text: "Registration fixes everything! Registering the mortgage cured any defects in J and L's ownership!" },
+        { name: "PLAINTIFF", text: "Is registration of the mortgage in favor of F Corp enough to make it valid despite the prior sale to H and W?",
+            choices: [
+                { text: "No, registration does not validate a mortgage that was void.", correct: true, note: "JUDICIAL VERDICT: Correct. Registration only binds third persons; it does not cure an inherently void contract." },
+                { text: "Yes, because registration automatically cures any defect in ownership.", correct: false, note: "JUDICIAL VERDICT: Wrong. Registration cannot grant validity to a mortgage executed by a non-owner." }
+            ]
+        },
+        { name: "DEFENDANT", text: "Every mortgage automatically creates a real right over the property, no matter what!" },
+        { name: "PLAINTIFF", text: "If J and L were no longer owners when they mortgaged the property, does the mortgage create a real right?",
+            choices: [
+                { text: "No, it creates a real right only if validly constituted by the owner.", correct: true, note: "JUDICIAL VERDICT: Correct. Without ownership, no real right is established." },
+                { text: "Yes, because every mortgage automatically creates a real right.", correct: false, note: "JUDICIAL VERDICT: Incorrect. The power to create a real right stems from the mortgagor's ownership." }
+            ]
+        },
+        { name: "DEFENDANT", text: "Foreclosure always transfers ownership, regardless of what rights J and L actually had left!" },
+        { name: "PLAINTIFF", text: "Can F Corp acquire ownership through foreclosure if J and L had no more rights over it at the time of the mortgage?",
+            choices: [
+                { text: "No, foreclosure cannot transfer a better right than what the mortgagor had.", correct: true, note: "JUDICIAL VERDICT: Correct. The spring cannot rise higher than its source; J and L had no rights left to transfer." },
+                { text: "Yes, because foreclosure transfers ownership regardless of the mortgagor’s rights.", correct: false, note: "JUDICIAL VERDICT: Wrong. Foreclosure relies entirely on the validity of the underlying mortgage and ownership." }
+            ]
+        },
+        { name: "JUDGE", text: "The evidence is absolute. Justice has been served." }
+    ];
+
+    function playBlip() {
+        if (audioCtx.state === 'suspended') return;
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(600, audioCtx.currentTime);
+        g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        music.volume = 0.15; music.play(); nextStep();
+    }
+
+    function handleInput() { if (!isTyping && gameState !== "choices" && gameState !== "end") nextStep(); }
+
+    function skipDialogue() {
+        if (isTyping) {
+            clearInterval(typeIntv);
+            document.getElementById('text').innerHTML = fullTxt;
+            isTyping = false;
+            if (gameState === "choice_typing") { gameState = "choices"; showChoices(); startTimer(); }
+            else if (gameState === "ruling_typing") { gameState = "waiting"; }
+        }
+    }
+
+    function startTimer() {
+        const bar = document.getElementById('timer-bar');
+        document.getElementById('timer-container').style.display = 'block';
+        timeLeft = 100;
+        timerInterval = setInterval(() => {
+            timeLeft -= 1.0; bar.style.width = timeLeft + "%";
+            if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeOut(); }
+        }, 100);
+    }
+
+    function handleTimeOut() {
+        health -= 25; document.getElementById('health-bar').style.width = Math.max(0, health) + "%";
+        if (health <= 0) endGame(false);
+        else renderRuling("REJECTED", "Silence is not an option! The Court requires an answer.");
+    }
+
+    function updateUI(name) {
+        const tag = document.getElementById('speaker-tag');
+        const pla = document.getElementById('plaintiff');
+        const def = document.getElementById('defendant');
+        const jFrame = document.getElementById('judge-frame');
+        tag.innerText = name;
+        pla.classList.remove('active'); def.classList.remove('active'); jFrame.classList.remove('active');
+        if (name === "JUDGE") { tag.style.background = "var(--judge-purple)"; if (!jFrame.classList.contains('active')) playBlip(); jFrame.classList.add('active'); }
+        else if (name === "PLAINTIFF") { tag.style.background = "var(--pla-gold)"; if (!pla.classList.contains('active')) playBlip(); pla.classList.add('active'); }
+        else { tag.style.background = "var(--def-blue)"; if (!def.classList.contains('active')) playBlip(); def.classList.add('active'); }
+    }
+
+    function typeWriter(text, callback) {
+        isTyping = true; fullTxt = text;
+        const textEl = document.getElementById('text'); textEl.innerHTML = "";
+        let i = 0; typeIntv = setInterval(() => {
+            textEl.innerHTML += text.charAt(i); i++;
+            if (i >= text.length) { clearInterval(typeIntv); isTyping = false; if (callback) callback(); }
+        }, 20);
+    }
+
+    function showChoices() {
+        const area = document.getElementById('choices'); area.innerHTML = ""; area.style.display = "flex";
+        script[currentIdx].choices.forEach(c => {
+            const b = document.createElement('button'); b.className = "choice-btn"; b.innerText = c.text;
+            b.onclick = (e) => { e.stopPropagation(); handleChoice(c); }; area.appendChild(b);
+        });
+    }
+
+    function handleChoice(c) {
+        clearInterval(timerInterval); document.getElementById('timer-container').style.display = 'none'; document.getElementById('choices').style.display = 'none';
+        const verdict = c.correct ? "AFFIRMED" : "REJECTED";
+        if (!c.correct) health -= 25; else score += 1000;
+        document.getElementById('health-bar').style.width = Math.max(0, health) + "%"; document.getElementById('score-val').innerText = score;
+        if(health <= 0) { endGame(false); return; } renderRuling(verdict, c.note);
+    }
+
+    function renderRuling(verdictText, noteText) {
+    const stamp = document.getElementById('verdict-stamp');
+    
+    // --- SYNTHESIZED SOUND LOGIC (NO FILES NEEDED) ---
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    if (verdictText === "AFFIRMED") {
+        // High-pitched "Ding"
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        stamp.style.color = "var(--win-green)";
+    } else {
+        // Low-pitched "Thud"
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
+        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        stamp.style.color = "var(--ace-red)";
+    }
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    // ------------------------------------------------
+
+    stamp.innerText = verdictText; 
+    stamp.style.opacity = "1";
+    stamp.style.display = "block";
+    stamp.classList.add('stamp-anim'); 
+    
+    updateUI("JUDGE");
+    gameState = "ruling_typing";
+    
+    typeWriter(noteText, () => {
+        gameState = "waiting"; 
+    });
+
+    setTimeout(() => { 
+        stamp.classList.remove('stamp-anim'); 
+        stamp.style.display = "none"; 
+    }, 1000); // 0.5s duration
+    }
+
+    function nextStep() {
+        currentIdx++;
+        if (currentIdx < script.length) {
+            updateUI(script[currentIdx].name);
+            if(script[currentIdx].choices) gameState = "choice_typing"; else gameState = "waiting";
+            typeWriter(script[currentIdx].text, () => {
+                if(script[currentIdx].choices) { gameState = "choices"; showChoices(); startTimer(); }
+            });
+        } else endGame(true);
+    }
+
+    function endGame(win) {
+    gameState = "end";
+    music.pause();
+    vMusic.volume = 0.2; 
+    vMusic.play();
+
+    document.getElementById('end-screen').style.display = 'flex';
+    
+    const winImg = document.getElementById('win-img');
+    const lossImg = document.getElementById('loss-img');
+
+    if (win) {
+        winImg.style.display = 'block';
+        lossImg.style.display = 'none';
+        document.getElementById('win-loss-text').innerText = "CASE RESOLVED";
+        document.getElementById('end-title').style.color = "var(--win-green)";
+    } else {
+        winImg.style.display = 'none';
+        lossImg.style.display = 'block';
+        document.getElementById('win-loss-text').innerText = "CASE FAILED";
+        document.getElementById('end-title').style.color = "var(--ace-red)";
+    }
+
+    document.getElementById('final-points').innerText = score + (health * 10);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case II</title>
+    <style>
+        :root { --pla-gold: #d4af37; --def-blue: #2c3e50; --ace-red: #cc0000; --win-green: #26890c; --judge-purple: #4b0082; }
+        body { margin: 0; background: #000; color: white; font-family: 'Courier New', Courier, monospace; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+
+        /* UI */
+        #top-bar { position: absolute; top: 20px; width: 95%; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        #health-container { width: 200px; height: 20px; border: 3px solid white; background: #333; }
+        #health-bar { width: 100%; height: 100%; background: var(--pla-gold); transition: width 0.5s; }
+        #timer-container { position: absolute; top: 60px; right: 20px; width: 200px; height: 12px; background: #222; border: 1px solid #fff; display: none; }
+        #timer-bar { width: 100%; height: 100%; background: var(--ace-red); }
+
+        /* Scene Rendering */
+        #court-scene { 
+            width: 100vw; height: 50vh; position: relative; 
+            background: url('../Files/Courtroom.jpg') no-repeat center center; 
+            background-size: cover; display: flex; justify-content: center; 
+            align-items: flex-end; border-bottom: 8px solid #3d2b1f; overflow: hidden; 
+        }
+        #court-scene.verdict-mode { background-image: url('Files/verdictbg.jpg') !important; }
+
+        .sprite { position: absolute; bottom: -5px; height: 95%; width: auto; transition: 0.3s; opacity: 0.4; filter: grayscale(1); z-index: 5; pointer-events: none; }
+        #plaintiff { right: 5%; } #defendant { left: 5%; }
+        .sprite.active { opacity: 1; filter: grayscale(0); transform: scale(1.05); z-index: 10; }
+
+        #judge-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -150%); width: 300px; height: 300px; border: 5px solid var(--pla-gold); transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); z-index: 150; opacity: 0; pointer-events: none; }
+        #judge-frame.active { transform: translate(-50%, -55%); opacity: 1; }
+        #judge-img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* Verdict Stamp */
+        #verdict-stamp { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%) scale(5); font-size: 80px; font-weight: 900; z-index: 1000; opacity: 0; display: none; text-shadow: 4px 4px #000; pointer-events: none; }
+        .stamp-anim { display: block !important; animation: stampIn 0.5s forwards; }
+        @keyframes stampIn { 0% { transform: translate(-50%, -50%) scale(5); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+
+        /* Dialogue */
+        #dialogue-area { width: 95%; height: 43vh; background: rgba(0,0,0,0.95); border: 4px solid #fff; margin-top: 10px; padding: 25px; box-sizing: border-box; position: relative; cursor: pointer; z-index: 200; }
+        #speaker-tag { position: absolute; top: -30px; left: 20px; padding: 5px 25px; font-weight: bold; font-size: 22px; border: 3px solid #fff; }
+        #text { font-size: 18px; line-height: 1.5; margin-top: 10px; }
+        #choices { display: none; flex-direction: column; gap: 8px; margin-top: 5px; }
+        .choice-btn { background: #111; border: 1px solid #fff; color: #fff; padding: 12px; cursor: pointer; text-align: left; font-family: inherit; }
+        #skip-btn { position: absolute; bottom: 10px; right: 10px; padding: 10px 20px; background: #444; border: 2px solid white; color: white; cursor: pointer; font-size: 14px; z-index: 1000; }
+
+        /* Screens & Modal */
+        #start-screen, #end-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: #1a1a1a; border: 15px solid var(--pla-gold); box-sizing: border-box; }
+        #end-screen { display: none; z-index: 20000; background: #000; }
+        .btn-gold { background: var(--pla-gold); color: black; border: none; padding: 15px 40px; font-weight: bold; cursor: pointer; font-size: 18px; margin-top: 15px; }
+        
+        #case-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 85%; background: #111; border: 5px solid var(--pla-gold); z-index: 6000; padding: 30px; box-sizing: border-box; overflow-y: auto; text-align: left; line-height: 1.6; }
+   
+        #end-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+        }
+
+        .end-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* This makes it fill the screen like a wallpaper */
+            z-index: 1;
+            display: none;
+            filter: brightness(0.4); /* Makes the image darker so text is easier to read */
+        }
+   </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1 style="color: var(--pla-gold); font-size: 40px;">Case II</h1>
+        <h2 style="color: white; margin-bottom: 10px;">R., Igunako v. E., Mueran</h2>
+        <button class="btn-gold" onclick="startGame()">Start Trial</button>
+        <button class="btn-gold" style="background: #fff;" onclick="toggleCaseModal(true)">Case File</button>
+    </div>
+
+    <div id="case-modal">
+        <h3 style="color: var(--pla-gold); margin-top: 0;">Case II - R., Igunako v. E., Mueran</h3>
+        <p>September 13, 1984, E claims purchase of the property from spouses H and W. Due to employment abroad, the Deed of Absolute Sale was placed in the name of the brother, A.</p>
+        <p>April 8, 1985, A executed a Deed of Donation over the property in favor of E’s minor son, J. J reportedly received the fruits of the property from this time onward.</p>
+        <p>September 14, 1988, A mortgaged the property to R.</p>
+        <p>September 30, 1988, The mortgage between A and R was amended.</p>
+        <p>June 1992, E learned that the property had been extrajudicially foreclosed and filed a complaint to annul the mortgage, arguing A had no right to mortgage the property.</p>
+        <p>R filed an answer claiming status as a mortgagee in good faith, having relied on the fact that the land title and deed of sale were in A's name.</p>
+        <p style="font-weight: bold; color: var(--pla-gold);">PLAYER - DEFENDANT: R., Igunako</p>
+        <button class="btn-gold" onclick="toggleCaseModal(false)">Close File</button>
+    </div>
+
+    <audio id="bgMusic" loop><source src="../Files/bgmusic.mp3" type="audio/mpeg"></audio>
+    <audio id="verdictBgm"><source src="../Files/verdictbgm.mp3" type="audio/mpeg"></audio>
+    <div id="verdict-stamp"></div>
+
+    <div id="end-screen">
+    <img id="win-img" class="end-bg" src="../Files/suits.jpg" alt="Winner">
+    <img id="loss-img" class="end-bg" src="../Files/louis.jpg" alt="Loser">
+    
+    <div style="z-index: 2; position: relative; background: rgba(0,0,0,0.6); padding: 40px; border-radius: 15px;">
+        <h1 id="end-title" style="font-size: 60px; margin: 0;">VERDICT</h1>
+        <h2 id="win-loss-text"></h2>
+        <div style="font-size: 24px; color: var(--pla-gold); margin-bottom: 20px;">FINAL SCORE: <span id="final-points">0</span></div>
+        <button class="btn-gold" onclick="window.location.href='../ActIII/ActIII.html'">NEXT CASE</button>
+        <button class="btn-gold" style="background: #fff;" onclick="window.location.href='../index.html'">MENU</button>
+    </div>
+    </div>
+
+    <div id="top-bar">
+        <div style="font-size: 24px; color: var(--pla-gold);">SCORE: <span id="score-val">0</span></div>
+        <div id="health-container"><div id="health-bar"></div></div>
+    </div>
+    <div id="timer-container"><div id="timer-bar"></div></div>
+
+    <div id="court-scene">
+        <div id="judge-frame"><img id="judge-img" src="../Files/Andrei.png" alt="Judge Andrei"></div>
+        <img id="defendant" class="sprite" src="../Files/Francis.png" alt="Defendant">
+        <img id="plaintiff" class="sprite" src="../Files/Erica.png" alt="Plaintiff">
+    </div>
+
+    <div id="dialogue-area" onclick="handleInput()">
+        <div id="speaker-tag">JUDGE</div>
+        <div id="text">...</div>
+        <div id="choices"></div>
+        <button id="skip-btn" onclick="event.stopPropagation(); skipDialogue()">SKIP</button>
+    </div>
+
+<script>
+    function toggleCaseModal(show) { document.getElementById('case-modal').style.display = show ? 'block' : 'none'; }
+
+    const music = document.getElementById('bgMusic');
+    const vMusic = document.getElementById('verdictBgm');
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    let health = 100; let score = 0; let currentIdx = -1; 
+    let isTyping = false; let gameState = "start"; 
+    let timerInterval = null; let timeLeft = 100;
+    let typeIntv = null; let fullTxt = "";
+
+    const script = [
+        { name: "JUDGE", text: "E., Mueran v. R., Igunako. The court is now in session." },
+        { name: "PLAINTIFF", text: "The face of a title should not be blindly trusted. There is a legal requirement to investigate the entire history of the property!" },
+        { name: "DEFENDANT", text: "Under the Torrens system, is a mortgagee permitted to rely solely on what appears on the face of the certificate of title?",
+            choices: [
+                { text: "YES: The mortgagee may rely in good faith on the face of the TCT.", correct: true, note: "JUDICIAL VERDICT: Yes. One is not required to look beyond the title when there is nothing to excite suspicion." },
+                { text: "NO: Investigation of the entire history is mandatory.", correct: false, note: "JUDICIAL VERDICT: Incorrect. The Torrens system protects the 'mirror principle' of the title." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "Ownership must be questioned if hidden defects exist, even if the title appears clear!" },
+        { name: "DEFENDANT", text: "If the property is registered in the name of A and there is no annotation of any defect, is there a duty to doubt the ownership?",
+            choices: [
+                { text: "NO: Valid title may be presumed unless there is notice of defect.", correct: true, note: "JUDICIAL VERDICT: Correct. A clean title is a valid basis for a mortgage transaction." },
+                { text: "YES: The presence of a hidden defect must be assumed.", correct: false, note: "JUDICIAL VERDICT: No. Suspicion is not required where the title appears clean on its face." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "The mortgage is invalid because of the existing claim by E!", },
+        { name: "DEFENDANT", text: "Considering the land was registered in the name of A and there was no knowledge of the claim by E, is the mortgage valid?",
+            choices: [
+                { text: "YES: The mortgagee is considered a mortgagee in good faith.", correct: true, note: "JUDICIAL VERDICT: Yes. Good faith consists in the belief that the person from whom the thing was received was the owner." },
+                { text: "NO: Hidden claims result in automatic invalidation.", correct: false, note: "JUDICIAL VERDICT: Wrong. The mortgagee's rights are protected if there was no awareness of the claim." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "A private agreement confirmed A was not the true owner. This agreement should be binding!", },
+        { name: "DEFENDANT", text: "Does a private understanding between the parties bind a mortgagee who has no knowledge of it?",
+            choices: [
+                { text: "NO: Private agreements cannot prejudice an innocent mortgagee.", correct: true, note: "JUDICIAL VERDICT: Correct. Private understandings cannot prevail over the registered title." },
+                { text: "YES: Private agreements take precedence over the public record.", correct: false, note: "JUDICIAL VERDICT: Incorrect. Third parties are only bound by what is registered." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "Registration is merely formal. It does not affect validity against third persons!", },
+        { name: "DEFENDANT", text: "Is actual registration of a mortgage critical for its validity against third persons?",
+            choices: [
+                { text: "YES: Registration serves as notice to the public.", correct: true, note: "JUDICIAL VERDICT: Yes. Registration is the act that binds the land and notifies the public." },
+                { text: "NO: Registration has no legal effect.", correct: false, note: "JUDICIAL VERDICT: Wrong. Registration is the operative act under the Torrens system." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "Family rights and prior donations should override any commercial mortgage!", },
+        { name: "DEFENDANT", text: "What legal concept supports a ruling that upholds the mortgage over unregistered prior claims?",
+            choices: [
+                { text: "Protection of mortgagees in good faith relying on a clean Torrens title.", correct: true, note: "JUDICIAL VERDICT: Yes. This principle ensures stability in land dealings." },
+                { text: "Automatic invalidation of mortgages involving relatives.", correct: false, note: "JUDICIAL VERDICT: No. Relationship does not automatically invalidate a legal contract." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "The mortgage was not executed by the true owner. It might have been signed by another party!", },
+        { name: "DEFENDANT", text: "Did the registered owner, A, execute the mortgage in favor of R?",
+            choices: [
+                { text: "YES: The facts state the registered owner mortgaged the property.", correct: true, note: "JUDICIAL VERDICT: Correct. A, as the registered owner, signed the mortgage instrument." },
+                { text: "NO: A different individual executed the contract.", correct: false, note: "JUDICIAL VERDICT: Incorrect. The record confirms the transaction was between A and R." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "The mortgagee is in bad faith. It was the mortgagee's responsibility to find the true owner!", },
+        { name: "DEFENDANT", text: "Is the mortgagee considered to be in bad faith if the certificate and records were verified?",
+            choices: [
+                { text: "NO: Reliance on the certificate and verified records shows good faith.", correct: true, note: "JUDICIAL VERDICT: Correct. Verification of the title and inspection of the site constitutes good faith." },
+                { text: "YES: The mortgagee had a duty to look beyond the title.", correct: false, note: "JUDICIAL VERDICT: No. Reliance on a clean title is the definition of good faith here." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "The annulment case should have made the registration of the mortgage void!", },
+        { name: "DEFENDANT", text: "Is the mortgage registered with the Register of Deeds valid despite a pending annulment?",
+            choices: [
+                { text: "YES: Registration was completed despite the pending case.", correct: true, note: "JUDICIAL VERDICT: Yes. Registration was completed despite the pending litigation." },
+                { text: "NO: The case rendered the registration void.", correct: false, note: "JUDICIAL VERDICT: Wrong. A pending case does not automatically void an existing registration." }
+            ]
+        },
+        { name: "PLAINTIFF", text: "Possession belongs to J because J receives the fruits. Fruits follow the principal!", },
+        { name: "DEFENDANT", text: "Is it true that the right to the fruits of the property always proves physical possession?",
+            choices: [
+                { text: "No, physical possession is determined by actual occupancy, which can be independent of who receives the fruits of the property.", correct: true, note: "JUDICIAL VERDICT: Correct. While legal principles often link fruits to ownership, a mortgagee in good faith is required to verify actual physical possession." },
+                { text: "Yes, because under the principle that fruits follow the principal the person receiving the fruits is always the legal possessor.", correct: false, note: "JUDICIAL VERDICT: Wrong. While legal principles often link fruits to ownership, a mortgagee in good faith is required to verify actual physical possession." }
+            ]
+        },
+        { name: "JUDGE", text: "The principles of land registration are clear. The court is adjourned." }
+    ];
+
+    function playBlip() {
+        if (audioCtx.state === 'suspended') return;
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(600, audioCtx.currentTime);
+        g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        music.volume = 0.15; music.play(); nextStep();
+    }
+
+    function handleInput() { if (!isTyping && gameState !== "choices" && gameState !== "end") nextStep(); }
+
+    function skipDialogue() {
+        if (isTyping) {
+            clearInterval(typeIntv);
+            document.getElementById('text').innerHTML = fullTxt;
+            isTyping = false;
+            if (gameState === "choice_typing") { gameState = "choices"; showChoices(); startTimer(); }
+            else if (gameState === "ruling_typing") { gameState = "waiting"; }
+        }
+    }
+
+    function startTimer() {
+        const bar = document.getElementById('timer-bar');
+        document.getElementById('timer-container').style.display = 'block';
+        timeLeft = 100;
+        timerInterval = setInterval(() => {
+            timeLeft -= 1.0; bar.style.width = timeLeft + "%";
+            if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeOut(); }
+        }, 100);
+    }
+
+    function handleTimeOut() {
+        health -= 25; document.getElementById('health-bar').style.width = Math.max(0, health) + "%";
+        if (health <= 0) endGame(false);
+        else renderRuling("REJECTED", "The Court requires an answer.");
+    }
+
+    function updateUI(name) {
+        const tag = document.getElementById('speaker-tag');
+        const pla = document.getElementById('plaintiff');
+        const def = document.getElementById('defendant');
+        const jFrame = document.getElementById('judge-frame');
+        tag.innerText = name;
+        pla.classList.remove('active'); def.classList.remove('active'); jFrame.classList.remove('active');
+        if (name === "JUDGE") { tag.style.background = "var(--judge-purple)"; if (!jFrame.classList.contains('active')) playBlip(); jFrame.classList.add('active'); }
+        else if (name === "PLAINTIFF") { tag.style.background = "var(--def-blue)"; if (!pla.classList.contains('active')) playBlip(); pla.classList.add('active'); }
+        else { tag.style.background = "var(--pla-gold)"; if (!def.classList.contains('active')) playBlip(); def.classList.add('active'); }
+    }
+
+    function typeWriter(text, callback) {
+        isTyping = true; fullTxt = text;
+        const textEl = document.getElementById('text'); textEl.innerHTML = "";
+        let i = 0; typeIntv = setInterval(() => {
+            textEl.innerHTML += text.charAt(i); i++;
+            if (i >= text.length) { clearInterval(typeIntv); isTyping = false; if (callback) callback(); }
+        }, 20);
+    }
+
+    function showChoices() {
+        const area = document.getElementById('choices'); area.innerHTML = ""; area.style.display = "flex";
+        script[currentIdx].choices.forEach(c => {
+            const b = document.createElement('button'); b.className = "choice-btn"; b.innerText = c.text;
+            b.onclick = (e) => { e.stopPropagation(); handleChoice(c); }; area.appendChild(b);
+        });
+    }
+
+    function handleChoice(c) {
+        clearInterval(timerInterval); document.getElementById('timer-container').style.display = 'none'; document.getElementById('choices').style.display = 'none';
+        const verdict = c.correct ? "AFFIRMED" : "REJECTED";
+        if (!c.correct) health -= 25; else score += 1000;
+        document.getElementById('health-bar').style.width = Math.max(0, health) + "%"; document.getElementById('score-val').innerText = score;
+        if(health <= 0) { endGame(false); return; } renderRuling(verdict, c.note);
+    }
+
+    function renderRuling(verdictText, noteText) {
+        const stamp = document.getElementById('verdict-stamp');
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        if (verdictText === "AFFIRMED") {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            stamp.style.color = "var(--win-green)";
+        } else {
+            osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            stamp.style.color = "var(--ace-red)";
+        }
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        stamp.innerText = verdictText; stamp.style.opacity = "1"; stamp.style.display = "block"; stamp.classList.add('stamp-anim'); 
+        updateUI("JUDGE"); gameState = "ruling_typing";
+        typeWriter(noteText, () => { gameState = "waiting"; });
+        setTimeout(() => { stamp.classList.remove('stamp-anim'); stamp.style.display = "none"; }, 1000);
+    }
+
+    function nextStep() {
+        currentIdx++;
+        if (currentIdx < script.length) {
+            updateUI(script[currentIdx].name);
+            if(script[currentIdx].choices) gameState = "choice_typing"; else gameState = "waiting";
+            typeWriter(script[currentIdx].text, () => {
+                if(script[currentIdx].choices) { gameState = "choices"; showChoices(); startTimer(); }
+            });
+        } else endGame(true);
+    }
+
+    function endGame(win) {
+    gameState = "end";
+    music.pause();
+    vMusic.volume = 0.2; 
+    vMusic.play();
+
+    document.getElementById('end-screen').style.display = 'flex';
+    
+    const winImg = document.getElementById('win-img');
+    const lossImg = document.getElementById('loss-img');
+
+    if (win) {
+        winImg.style.display = 'block';
+        lossImg.style.display = 'none';
+        document.getElementById('win-loss-text').innerText = "CASE RESOLVED";
+        document.getElementById('end-title').style.color = "var(--win-green)";
+    } else {
+        winImg.style.display = 'none';
+        lossImg.style.display = 'block';
+        document.getElementById('win-loss-text').innerText = "CASE FAILED";
+        document.getElementById('end-title').style.color = "var(--ace-red)";
+    }
+
+    document.getElementById('final-points').innerText = score + (health * 10);
+    }
+</script>
+</body>
+</html>
