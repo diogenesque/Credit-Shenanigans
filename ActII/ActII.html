@@ -12,8 +12,6 @@
         #top-bar { position: absolute; top: 20px; width: 95%; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         #health-container { width: 200px; height: 20px; border: 3px solid white; background: #333; }
         #health-bar { width: 100%; height: 100%; background: var(--pla-gold); transition: width 0.5s; }
-        #timer-container { position: absolute; top: 60px; right: 20px; width: 200px; height: 12px; background: #222; border: 1px solid #fff; display: none; }
-        #timer-bar { width: 100%; height: 100%; background: var(--ace-red); }
 
         /* Scene Rendering */
         #court-scene { 
@@ -71,10 +69,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* This makes it fill the screen like a wallpaper */
+            object-fit: cover; 
             z-index: 1;
             display: none;
-            filter: brightness(0.4); /* Makes the image darker so text is easier to read */
+            filter: brightness(0.4); 
         }
    </style>
 </head>
@@ -120,7 +118,6 @@
         <div style="font-size: 24px; color: var(--pla-gold);">SCORE: <span id="score-val">0</span></div>
         <div id="health-container"><div id="health-bar"></div></div>
     </div>
-    <div id="timer-container"><div id="timer-bar"></div></div>
 
     <div id="court-scene">
         <div id="judge-frame"><img id="judge-img" src="../Files/Andrei.png" alt="Judge Andrei"></div>
@@ -144,7 +141,6 @@
 
     let health = 100; let score = 0; let currentIdx = -1; 
     let isTyping = false; let gameState = "start"; 
-    let timerInterval = null; let timeLeft = 100;
     let typeIntv = null; let fullTxt = "";
 
     const script = [
@@ -152,8 +148,8 @@
         { name: "PLAINTIFF", text: "The face of a title should not be blindly trusted. There is a legal requirement to investigate the entire history of the property!" },
         { name: "DEFENDANT", text: "Under the Torrens system, is a mortgagee permitted to rely solely on what appears on the face of the certificate of title?",
             choices: [
-                { text: "YES: The mortgagee may rely in good faith on the face of the TCT.", correct: true, note: "JUDICIAL VERDICT: Yes. One is not required to look beyond the title when there is nothing to excite suspicion." },
-                { text: "NO: Investigation of the entire history is mandatory.", correct: false, note: "JUDICIAL VERDICT: Incorrect. The Torrens system protects the 'mirror principle' of the title." }
+                { text: "NO: Investigation of the entire history is mandatory.", correct: false, note: "JUDICIAL VERDICT: Incorrect. The Torrens system protects the 'mirror principle' of the title." },
+                { text: "YES: The mortgagee may rely in good faith on the face of the TCT.", correct: true, note: "JUDICIAL VERDICT: Yes. One is not required to look beyond the title when there is nothing to excite suspicion." }
             ]
         },
         { name: "PLAINTIFF", text: "Ownership must be questioned if hidden defects exist, even if the title appears clear!" },
@@ -166,8 +162,8 @@
         { name: "PLAINTIFF", text: "The mortgage is invalid because of the existing claim by E!", },
         { name: "DEFENDANT", text: "Considering the land was registered in the name of A and there was no knowledge of the claim by E, is the mortgage valid?",
             choices: [
-                { text: "YES: The mortgagee is considered a mortgagee in good faith.", correct: true, note: "JUDICIAL VERDICT: Yes. Good faith consists in the belief that the person from whom the thing was received was the owner." },
-                { text: "NO: Hidden claims result in automatic invalidation.", correct: false, note: "JUDICIAL VERDICT: Wrong. The mortgagee's rights are protected if there was no awareness of the claim." }
+                { text: "NO: Hidden claims result in automatic invalidation.", correct: false, note: "JUDICIAL VERDICT: Wrong. The mortgagee's rights are protected if there was no awareness of the claim." },
+                { text: "YES: The mortgagee is considered a mortgagee in good faith.", correct: true, note: "JUDICIAL VERDICT: Yes. Good faith consists in the belief that the person from whom the thing was received was the owner." }
             ]
         },
         { name: "PLAINTIFF", text: "A private agreement confirmed A was not the true owner. This agreement should be binding!", },
@@ -180,15 +176,15 @@
         { name: "PLAINTIFF", text: "Registration is merely formal. It does not affect validity against third persons!", },
         { name: "DEFENDANT", text: "Is actual registration of a mortgage critical for its validity against third persons?",
             choices: [
-                { text: "YES: Registration serves as notice to the public.", correct: true, note: "JUDICIAL VERDICT: Yes. Registration is the act that binds the land and notifies the public." },
-                { text: "NO: Registration has no legal effect.", correct: false, note: "JUDICIAL VERDICT: Wrong. Registration is the operative act under the Torrens system." }
+                { text: "NO: Registration has no legal effect.", correct: false, note: "JUDICIAL VERDICT: Wrong. Registration is the operative act under the Torrens system." },
+                { text: "YES: Registration serves as notice to the public.", correct: true, note: "JUDICIAL VERDICT: Yes. Registration is the act that binds the land and notifies the public." }
             ]
         },
         { name: "PLAINTIFF", text: "Family rights and prior donations should override any commercial mortgage!", },
         { name: "DEFENDANT", text: "What legal concept supports a ruling that upholds the mortgage over unregistered prior claims?",
             choices: [
-                { text: "Protection of mortgagees in good faith relying on a clean Torrens title.", correct: true, note: "JUDICIAL VERDICT: Yes. This principle ensures stability in land dealings." },
-                { text: "Automatic invalidation of mortgages involving relatives.", correct: false, note: "JUDICIAL VERDICT: No. Relationship does not automatically invalidate a legal contract." }
+                { text: "Automatic invalidation of mortgages involving relatives.", correct: false, note: "JUDICIAL VERDICT: No. Relationship does not automatically invalidate a legal contract." },
+                { text: "Protection of mortgagees in good faith relying on a clean Torrens title.", correct: true, note: "JUDICIAL VERDICT: Yes. This principle ensures stability in land dealings." }
             ]
         },
         { name: "PLAINTIFF", text: "The mortgage was not executed by the true owner. It might have been signed by another party!", },
@@ -201,8 +197,8 @@
         { name: "PLAINTIFF", text: "The mortgagee is in bad faith. It was the mortgagee's responsibility to find the true owner!", },
         { name: "DEFENDANT", text: "Is the mortgagee considered to be in bad faith if the certificate and records were verified?",
             choices: [
-                { text: "NO: Reliance on the certificate and verified records shows good faith.", correct: true, note: "JUDICIAL VERDICT: Correct. Verification of the title and inspection of the site constitutes good faith." },
-                { text: "YES: The mortgagee had a duty to look beyond the title.", correct: false, note: "JUDICIAL VERDICT: No. Reliance on a clean title is the definition of good faith here." }
+                { text: "YES: The mortgagee had a duty to look beyond the title.", correct: false, note: "JUDICIAL VERDICT: No. Reliance on a clean title is the definition of good faith here." },
+                { text: "NO: Reliance on the certificate and verified records shows good faith.", correct: true, note: "JUDICIAL VERDICT: Correct. Verification of the title and inspection of the site constitutes good faith." }
             ]
         },
         { name: "PLAINTIFF", text: "The annulment case should have made the registration of the mortgage void!", },
@@ -215,8 +211,8 @@
         { name: "PLAINTIFF", text: "Possession belongs to J because J receives the fruits. Fruits follow the principal!", },
         { name: "DEFENDANT", text: "Is it true that the right to the fruits of the property always proves physical possession?",
             choices: [
-                { text: "No, physical possession is determined by actual occupancy, which can be independent of who receives the fruits of the property.", correct: true, note: "JUDICIAL VERDICT: Correct. While legal principles often link fruits to ownership, a mortgagee in good faith is required to verify actual physical possession." },
-                { text: "Yes, because under the principle that fruits follow the principal the person receiving the fruits is always the legal possessor.", correct: false, note: "JUDICIAL VERDICT: Wrong. While legal principles often link fruits to ownership, a mortgagee in good faith is required to verify actual physical possession." }
+                { text: "Yes, because under the principle that fruits follow the principal the person receiving the fruits is always the legal possessor.", correct: false, note: "JUDICIAL VERDICT: Wrong. While legal principles often link fruits to ownership, a mortgagee in good faith is required to verify actual physical possession." },
+                { text: "No, physical possession is determined by actual occupancy, which can be independent of who receives the fruits of the property.", correct: true, note: "JUDICIAL VERDICT: Correct. While legal principles often link fruits to ownership, a mortgagee in good faith is required to verify actual physical possession." }
             ]
         },
         { name: "JUDGE", text: "The principles of land registration are clear. The court is adjourned." }
@@ -244,25 +240,9 @@
             clearInterval(typeIntv);
             document.getElementById('text').innerHTML = fullTxt;
             isTyping = false;
-            if (gameState === "choice_typing") { gameState = "choices"; showChoices(); startTimer(); }
+            if (gameState === "choice_typing") { gameState = "choices"; showChoices(); }
             else if (gameState === "ruling_typing") { gameState = "waiting"; }
         }
-    }
-
-    function startTimer() {
-        const bar = document.getElementById('timer-bar');
-        document.getElementById('timer-container').style.display = 'block';
-        timeLeft = 100;
-        timerInterval = setInterval(() => {
-            timeLeft -= 1.0; bar.style.width = timeLeft + "%";
-            if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeOut(); }
-        }, 100);
-    }
-
-    function handleTimeOut() {
-        health -= 25; document.getElementById('health-bar').style.width = Math.max(0, health) + "%";
-        if (health <= 0) endGame(false);
-        else renderRuling("REJECTED", "The Court requires an answer.");
     }
 
     function updateUI(name) {
@@ -295,7 +275,7 @@
     }
 
     function handleChoice(c) {
-        clearInterval(timerInterval); document.getElementById('timer-container').style.display = 'none'; document.getElementById('choices').style.display = 'none';
+        document.getElementById('choices').style.display = 'none';
         const verdict = c.correct ? "AFFIRMED" : "REJECTED";
         if (!c.correct) health -= 25; else score += 1000;
         document.getElementById('health-bar').style.width = Math.max(0, health) + "%"; document.getElementById('score-val').innerText = score;
@@ -332,7 +312,7 @@
             updateUI(script[currentIdx].name);
             if(script[currentIdx].choices) gameState = "choice_typing"; else gameState = "waiting";
             typeWriter(script[currentIdx].text, () => {
-                if(script[currentIdx].choices) { gameState = "choices"; showChoices(); startTimer(); }
+                if(script[currentIdx].choices) { gameState = "choices"; showChoices(); }
             });
         } else endGame(true);
     }

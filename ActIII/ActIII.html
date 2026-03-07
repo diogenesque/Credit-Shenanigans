@@ -12,8 +12,6 @@
         #top-bar { position: absolute; top: 20px; width: 95%; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         #health-container { width: 200px; height: 20px; border: 3px solid white; background: #333; }
         #health-bar { width: 100%; height: 100%; background: var(--pla-gold); transition: width 0.5s; }
-        #timer-container { position: absolute; top: 60px; right: 20px; width: 200px; height: 12px; background: #222; border: 1px solid #fff; display: none; }
-        #timer-bar { width: 100%; height: 100%; background: var(--ace-red); }
 
         /* Scene Rendering */
         #court-scene { 
@@ -72,10 +70,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* This makes it fill the screen like a wallpaper */
+            object-fit: cover; 
             z-index: 1;
             display: none;
-            filter: brightness(0.4); /* Makes the image darker so text is easier to read */
+            filter: brightness(0.4); 
         }
     </style>
 </head>
@@ -121,7 +119,6 @@
         <div style="font-size: 24px; color: var(--pla-gold);">SCORE: <span id="score-val">0</span></div>
         <div id="health-container"><div id="health-bar"></div></div>
     </div>
-    <div id="timer-container"><div id="timer-bar"></div></div>
 
     <div id="court-scene">
         <div id="judge-frame"><img id="judge-img" src="../Files/judgeman.png" alt="Judge"></div>
@@ -145,15 +142,14 @@
 
     let health = 100; let score = 0; let currentIdx = -1; 
     let isTyping = false; let gameState = "start"; 
-    let timerInterval = null; let timeLeft = 100;
     let typeIntv = null; let fullTxt = "";
 
     const script = [
         { name: "DEFENDANT", text: "Your Honor, they don't even understand the basics of a real estate mortgage!" },
         { name: "PLAINTIFF", text: "What kind of property is legally subject to the real estate mortgage F Corp is trying to enforce against your home?",
             choices: [
-                { text: "Immovable property or alienable real rights imposed upon immovables.", correct: true, note: "JUDICIAL VERDICT: Correct. A real estate mortgage secures an obligation by subjecting immovable property or real rights to it." },
-                { text: "Movable or personal property.", correct: false, note: "JUDICIAL VERDICT: Incorrect. Real estate mortgages strictly apply to immovables and alienable real rights." }
+                { text: "Movable or personal property.", correct: false, note: "JUDICIAL VERDICT: Incorrect. Real estate mortgages strictly apply to immovables and alienable real rights." },
+                { text: "Immovable property or alienable real rights imposed upon immovables.", correct: true, note: "JUDICIAL VERDICT: Correct. A real estate mortgage secures an obligation by subjecting immovable property or real rights to it." }
             ]
         },
         { name: "DEFENDANT", text: "When a mortgage is valid, the creditor takes immediate physical control! You have no right to be there!" },
@@ -166,15 +162,15 @@
         { name: "DEFENDANT", text: "Our mortgage contract with F Corp stands entirely on its own! It's a primary agreement!" },
         { name: "PLAINTIFF", text: "F Corp might argue their mortgage contract stands on its own. What is the actual legal character of a real estate mortgage?",
             choices: [
-                { text: "It is an accessory and subsidiary contract.", correct: true, note: "JUDICIAL VERDICT: Correct. It only exists to secure the fulfillment of a principal obligation." },
-                { text: "It is a principal contract.", correct: false, note: "JUDICIAL VERDICT: Incorrect. A mortgage cannot exist without a principal obligation to secure." }
+                { text: "It is a principal contract.", correct: false, note: "JUDICIAL VERDICT: Incorrect. A mortgage cannot exist without a principal obligation to secure." },
+                { text: "It is an accessory and subsidiary contract.", correct: true, note: "JUDICIAL VERDICT: Correct. It only exists to secure the fulfillment of a principal obligation." }
             ]
         },
         { name: "DEFENDANT", text: "Even if it wasn't registered, our mortgage still legally binds everyone!" },
         { name: "PLAINTIFF", text: "If F Corp had failed to register this mortgage, how would it legally affect you as the prior buyers of the property?",
             choices: [
-                { text: "Buyers or transferees are not affected by an unregistered mortgage.", correct: true, note: "JUDICIAL VERDICT: Correct. Registration is required to bind third parties." },
-                { text: "You are bound by the foreclosure sale.", correct: false, note: "JUDICIAL VERDICT: Wrong. An unregistered mortgage only binds the parties to the contract, not innocent third parties." }
+                { text: "You are bound by the foreclosure sale.", correct: false, note: "JUDICIAL VERDICT: Wrong. An unregistered mortgage only binds the parties to the contract, not innocent third parties." },
+                { text: "Buyers or transferees are not affected by an unregistered mortgage.", correct: true, note: "JUDICIAL VERDICT: Correct. Registration is required to bind third parties." }
             ]
         },
         { name: "DEFENDANT", text: "Our registered mortgage gives F Corp absolute power over the property's fruits!" },
@@ -187,8 +183,8 @@
         { name: "DEFENDANT", text: "J and L could mortgage the property to F Corp even if they had already sold it!" },
         { name: "PLAINTIFF", text: "Can J and L validly mortgage the property to F Corp if they had already sold it to H and W?",
             choices: [
-                { text: "No, because the mortgagor must be the owner at the time it is constituted.", correct: true, note: "JUDICIAL VERDICT: Correct. Ownership at the time of constitution is a strict requisite for a valid mortgage." },
-                { text: "Yes, because a mortgage may still be constituted if they are no longer owners.", correct: false, note: "JUDICIAL VERDICT: Wrong. A mortgagor must have free disposal and ownership of the property." }
+                { text: "Yes, because a mortgage may still be constituted if they are no longer owners.", correct: false, note: "JUDICIAL VERDICT: Wrong. A mortgagor must have free disposal and ownership of the property." },
+                { text: "No, because the mortgagor must be the owner at the time it is constituted.", correct: true, note: "JUDICIAL VERDICT: Correct. Ownership at the time of constitution is a strict requisite for a valid mortgage." }
             ]
         },
         { name: "DEFENDANT", text: "The foreclosure is valid because the court approved it, regardless of the mortgage's origin!" },
@@ -201,8 +197,8 @@
         { name: "DEFENDANT", text: "Registration fixes everything! Registering the mortgage cured any defects in J and L's ownership!" },
         { name: "PLAINTIFF", text: "Is registration of the mortgage in favor of F Corp enough to make it valid despite the prior sale to H and W?",
             choices: [
-                { text: "No, registration does not validate a mortgage that was void.", correct: true, note: "JUDICIAL VERDICT: Correct. Registration only binds third persons; it does not cure an inherently void contract." },
-                { text: "Yes, because registration automatically cures any defect in ownership.", correct: false, note: "JUDICIAL VERDICT: Wrong. Registration cannot grant validity to a mortgage executed by a non-owner." }
+                { text: "Yes, because registration automatically cures any defect in ownership.", correct: false, note: "JUDICIAL VERDICT: Wrong. Registration cannot grant validity to a mortgage executed by a non-owner." },
+                { text: "No, registration does not validate a mortgage that was void.", correct: true, note: "JUDICIAL VERDICT: Correct. Registration only binds third persons; it does not cure an inherently void contract." }
             ]
         },
         { name: "DEFENDANT", text: "Every mortgage automatically creates a real right over the property, no matter what!" },
@@ -215,8 +211,8 @@
         { name: "DEFENDANT", text: "Foreclosure always transfers ownership, regardless of what rights J and L actually had left!" },
         { name: "PLAINTIFF", text: "Can F Corp acquire ownership through foreclosure if J and L had no more rights over it at the time of the mortgage?",
             choices: [
-                { text: "No, foreclosure cannot transfer a better right than what the mortgagor had.", correct: true, note: "JUDICIAL VERDICT: Correct. The spring cannot rise higher than its source; J and L had no rights left to transfer." },
-                { text: "Yes, because foreclosure transfers ownership regardless of the mortgagor’s rights.", correct: false, note: "JUDICIAL VERDICT: Wrong. Foreclosure relies entirely on the validity of the underlying mortgage and ownership." }
+                { text: "Yes, because foreclosure transfers ownership regardless of the mortgagor’s rights.", correct: false, note: "JUDICIAL VERDICT: Wrong. Foreclosure relies entirely on the validity of the underlying mortgage and ownership." },
+                { text: "No, foreclosure cannot transfer a better right than what the mortgagor had.", correct: true, note: "JUDICIAL VERDICT: Correct. The spring cannot rise higher than its source; J and L had no rights left to transfer." }
             ]
         },
         { name: "JUDGE", text: "The evidence is absolute. Justice has been served." }
@@ -244,25 +240,9 @@
             clearInterval(typeIntv);
             document.getElementById('text').innerHTML = fullTxt;
             isTyping = false;
-            if (gameState === "choice_typing") { gameState = "choices"; showChoices(); startTimer(); }
+            if (gameState === "choice_typing") { gameState = "choices"; showChoices(); }
             else if (gameState === "ruling_typing") { gameState = "waiting"; }
         }
-    }
-
-    function startTimer() {
-        const bar = document.getElementById('timer-bar');
-        document.getElementById('timer-container').style.display = 'block';
-        timeLeft = 100;
-        timerInterval = setInterval(() => {
-            timeLeft -= 1.0; bar.style.width = timeLeft + "%";
-            if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeOut(); }
-        }, 100);
-    }
-
-    function handleTimeOut() {
-        health -= 25; document.getElementById('health-bar').style.width = Math.max(0, health) + "%";
-        if (health <= 0) endGame(false);
-        else renderRuling("REJECTED", "Silence is not an option! The Court requires an answer.");
     }
 
     function updateUI(name) {
@@ -295,7 +275,7 @@
     }
 
     function handleChoice(c) {
-        clearInterval(timerInterval); document.getElementById('timer-container').style.display = 'none'; document.getElementById('choices').style.display = 'none';
+        document.getElementById('choices').style.display = 'none';
         const verdict = c.correct ? "AFFIRMED" : "REJECTED";
         if (!c.correct) health -= 25; else score += 1000;
         document.getElementById('health-bar').style.width = Math.max(0, health) + "%"; document.getElementById('score-val').innerText = score;
@@ -303,52 +283,27 @@
     }
 
     function renderRuling(verdictText, noteText) {
-    const stamp = document.getElementById('verdict-stamp');
-    
-    // --- SYNTHESIZED SOUND LOGIC (NO FILES NEEDED) ---
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    
-    if (verdictText === "AFFIRMED") {
-        // High-pitched "Ding"
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-        osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        stamp.style.color = "var(--win-green)";
-    } else {
-        // Low-pitched "Thud"
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
-        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        stamp.style.color = "var(--ace-red)";
-    }
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.3);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-    // ------------------------------------------------
-
-    stamp.innerText = verdictText; 
-    stamp.style.opacity = "1";
-    stamp.style.display = "block";
-    stamp.classList.add('stamp-anim'); 
-    
-    updateUI("JUDGE");
-    gameState = "ruling_typing";
-    
-    typeWriter(noteText, () => {
-        gameState = "waiting"; 
-    });
-
-    setTimeout(() => { 
-        stamp.classList.remove('stamp-anim'); 
-        stamp.style.display = "none"; 
-    }, 1000); // 0.5s duration
+        const stamp = document.getElementById('verdict-stamp');
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        if (verdictText === "AFFIRMED") {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            stamp.style.color = "var(--win-green)";
+        } else {
+            osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            stamp.style.color = "var(--ace-red)";
+        }
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        stamp.innerText = verdictText; stamp.style.opacity = "1"; stamp.style.display = "block"; stamp.classList.add('stamp-anim'); 
+        updateUI("JUDGE"); gameState = "ruling_typing";
+        typeWriter(noteText, () => { gameState = "waiting"; });
+        setTimeout(() => { stamp.classList.remove('stamp-anim'); stamp.style.display = "none"; }, 1000);
     }
 
     function nextStep() {
@@ -357,7 +312,7 @@
             updateUI(script[currentIdx].name);
             if(script[currentIdx].choices) gameState = "choice_typing"; else gameState = "waiting";
             typeWriter(script[currentIdx].text, () => {
-                if(script[currentIdx].choices) { gameState = "choices"; showChoices(); startTimer(); }
+                if(script[currentIdx].choices) { gameState = "choices"; showChoices(); }
             });
         } else endGame(true);
     }

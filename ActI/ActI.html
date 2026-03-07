@@ -12,8 +12,6 @@
         #top-bar { position: absolute; top: 20px; width: 95%; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         #health-container { width: 200px; height: 20px; border: 3px solid white; background: #333; }
         #health-bar { width: 100%; height: 100%; background: var(--pla-gold); transition: width 0.5s; }
-        #timer-container { position: absolute; top: 60px; right: 20px; width: 200px; height: 12px; background: #222; border: 1px solid #fff; display: none; }
-        #timer-bar { width: 100%; height: 100%; background: var(--ace-red); }
 
         /* Scene Rendering */
         #court-scene { 
@@ -25,7 +23,6 @@
         #court-scene.verdict-mode { background-image: url('../Files/verdictbg.jpg') !important; }
 
         .sprite { position: absolute; bottom: -5px; height: 95%; width: auto; transition: 0.3s; opacity: 0.4; filter: grayscale(1); z-index: 5; pointer-events: none; }
-        /* Player (Plaintiff) on the Left for Case I */
         #plaintiff { left: 5%; } #defendant { right: 5%; }
         .sprite.active { opacity: 1; filter: grayscale(0); transform: scale(1.05); z-index: 10; }
 
@@ -121,7 +118,6 @@
         <div style="font-size: 24px; color: var(--pla-gold);">SCORE: <span id="score-val">0</span></div>
         <div id="health-container"><div id="health-bar"></div></div>
     </div>
-    <div id="timer-container"><div id="timer-bar"></div></div>
 
     <div id="court-scene">
         <div id="judge-frame"><img id="judge-img" src="../Files/Andrei.png" alt="Judge Andrei"></div>
@@ -145,7 +141,6 @@
 
     let health = 100; let score = 0; let currentIdx = -1; 
     let isTyping = false; let gameState = "start"; 
-    let timerInterval = null; let timeLeft = 100;
     let typeIntv = null; let fullTxt = "";
 
     const script = [
@@ -153,29 +148,29 @@
         { name: "DEFENDANT", text: "Judge, a pawn ticket is merely a receipt for a customer! It doesn't constitute a formal security!" },
         { name: "PLAINTIFF", text: "Is X Pawnshop, Inc. liable for the payment of deficiency Documentary Stamp Tax (DST) on the pawn tickets it issued?",
             choices: [
-                { text: "YES: It serves as the document evidencing a pledge.", correct: true, note: "JUDICIAL VERDICT: Yes. Because a pawn ticket serves as the document evidencing a pledge, it falls under the taxable documents defined in Section 195 of the NIRC." },
-                { text: "NO: It is merely a receipt for a pawn.", correct: false, note: "JUDICIAL VERDICT: Yes. Because a pawn ticket serves as the document evidencing a pledge, it falls under the taxable documents defined in Section 195 of the NIRC." }
+                { text: "NO: It is merely a receipt for a pawn.", correct: false, note: "JUDICIAL VERDICT: Yes. Because a pawn ticket serves as the document evidencing a pledge, it falls under the taxable documents defined in Section 195 of the NIRC." },
+                { text: "YES: It serves as the document evidencing a pledge.", correct: true, note: "JUDICIAL VERDICT: Yes. Because a pawn ticket serves as the document evidencing a pledge, it falls under the taxable documents defined in Section 195 of the NIRC." }
             ]
         },
         { name: "DEFENDANT", text: "Even so, it doesn't qualify as a 'security' or 'printed evidence of indebtedness' under PD 114!" },
         { name: "PLAINTIFF", text: "Does a pawn ticket qualify as such under Section 3 of PD 114?",
             choices: [
-                { text: "YES: It represents a financial value and a debt.", correct: false, note: "JUDICIAL VERDICT: No. The document represents a financial value and a debt, thus fitting the definition of a security in the pawnshop industry." },
-                { text: "NO: The law defines it as a pawnbroker's receipt.", correct: true, note: "JUDICIAL VERDICT: No. The document represents a financial value and a debt, thus fitting the definition of a security in the pawnshop industry." }
+                { text: "NO: The law defines it as a pawnbroker's receipt.", correct: true, note: "JUDICIAL VERDICT: No. The document represents a financial value and a debt, thus fitting the definition of a security in the pawnshop industry." },
+                { text: "YES: It represents a financial value and a debt.", correct: false, note: "JUDICIAL VERDICT: No. The document represents a financial value and a debt, thus fitting the definition of a security in the pawnshop industry." }
             ]
         },
         { name: "DEFENDANT", text: "A pledge is consensual! It is perfected by agreement, not delivery!", },
         { name: "PLAINTIFF", text: "Is a pledge considered a 'real contract' according to the provided text?",
             choices: [
-                { text: "YES: It requires actual delivery of the thing pledged.", correct: true, note: "JUDICIAL VERDICT: Yes. It is considered a real contract because it requires the actual delivery and placement of the thing pledged into the possession of the creditor or a third party to be constituted." },
-                { text: "NO: It is perfected by mere consent.", correct: false, note: "JUDICIAL VERDICT: Yes. It is considered a real contract because it requires the actual delivery and placement of the thing pledged into the possession of the creditor or a third party to be constituted." }
+                { text: "NO: It is perfected by mere consent.", correct: false, note: "JUDICIAL VERDICT: Yes. It is considered a real contract because it requires the actual delivery and placement of the thing pledged into the possession of the creditor or a third party to be constituted." },
+                { text: "YES: It requires actual delivery of the thing pledged.", correct: true, note: "JUDICIAL VERDICT: Yes. It is considered a real contract because it requires the actual delivery and placement of the thing pledged into the possession of the creditor or a third party to be constituted." }
             ]
         },
         { name: "DEFENDANT", text: "Tax the agreement, CIR, not the ticket! The ticket is just a paper!", },
         { name: "PLAINTIFF", text: "Can the DST be avoided if the taxpayer argues the tax is on the 'agreement' instead of the 'ticket'?",
             choices: [
-                { text: "NO: The ticket evidences the contract of pledge.", correct: true, note: "JUDICIAL VERDICT: No. The pawn ticket itself is the document that spells out and evidences the contract of pledge, making the ticket the taxable object." },
-                { text: "YES: Only formal contracts should be taxed.", correct: false, note: "JUDICIAL VERDICT: No. The pawn ticket itself is the document that spells out and evidences the contract of pledge, making the ticket the taxable object." }
+                { text: "YES: Only formal contracts should be taxed.", correct: false, note: "JUDICIAL VERDICT: No. The pawn ticket itself is the document that spells out and evidences the contract of pledge, making the ticket the taxable object." },
+                { text: "NO: The ticket evidences the contract of pledge.", correct: true, note: "JUDICIAL VERDICT: No. The pawn ticket itself is the document that spells out and evidences the contract of pledge, making the ticket the taxable object." }
             ]
         },
         { name: "DEFENDANT", text: "The Pawnee is the borrower! We are just the shop keeper!", },
@@ -188,8 +183,8 @@
         { name: "DEFENDANT", text: "Possession is a separate physical act! The ticket proves nothing!", },
         { name: "PLAINTIFF", text: "Does the issuance of a pawn ticket imply that the property is already in the shop's possession?",
             choices: [
-                { text: "YES: The ticket is evidence the pawn was received.", correct: true, note: "JUDICIAL VERDICT: Yes. The ticket is evidence that the 'pawn' (the property) has been received, which is necessary to constitute the pledge." },
-                { text: "NO: The ticket is a preliminary document.", correct: false, note: "JUDICIAL VERDICT: Yes. The ticket is evidence that the 'pawn' (the property) has been received, which is necessary to constitute the pledge." }
+                { text: "NO: The ticket is a preliminary document.", correct: false, note: "JUDICIAL VERDICT: Yes. The ticket is evidence that the 'pawn' (the property) has been received, which is necessary to constitute the pledge." },
+                { text: "YES: The ticket is evidence the pawn was received.", correct: true, note: "JUDICIAL VERDICT: Yes. The ticket is evidence that the 'pawn' (the property) has been received, which is necessary to constitute the pledge." }
             ]
         },
         { name: "DEFENDANT", text: "DST is on transactions, not physical paper!", },
@@ -202,8 +197,8 @@
         { name: "DEFENDANT", text: "Legal hermeneutics favor X Pawnshop! The law is ambiguous!", },
         { name: "PLAINTIFF", text: "Can rules of 'legal hermeneutics' be used to exempt pawn tickets from tax?",
             choices: [
-                { text: "NO: Ticket entries clearly describe a taxable contract.", correct: true, note: "JUDICIAL VERDICT: No. The court held that no interpretation can change the fact that the entries on the ticket clearly describe a taxable contract of pledge." },
-                { text: "YES: Interpretation favors the taxpayer.", correct: false, note: "JUDICIAL VERDICT: No. The court held that no interpretation can change the fact that the entries on the ticket clearly describe a taxable contract of pledge." }
+                { text: "YES: Interpretation favors the taxpayer.", correct: false, note: "JUDICIAL VERDICT: No. The court held that no interpretation can change the fact that the entries on the ticket clearly describe a taxable contract of pledge." },
+                { text: "NO: Ticket entries clearly describe a taxable contract.", correct: true, note: "JUDICIAL VERDICT: No. The court held that no interpretation can change the fact that the entries on the ticket clearly describe a taxable contract of pledge." }
             ]
         },
         { name: "DEFENDANT", text: "If X Pawnshop misses a detail, the pledge remains valid between us!", },
@@ -216,8 +211,8 @@
         { name: "DEFENDANT", text: "It's just a specialized receipt, not a pledge agreement!", },
         { name: "PLAINTIFF", text: "Does a pawn ticket serve the same legal purpose as a 'pledge agreement'?",
             choices: [
-                { text: "YES: It documents the same legal relationship.", correct: true, note: "JUDICIAL VERDICT: Yes. It contains the same essential information and documents the same legal relationship between the debtor and the creditor." },
-                { text: "NO: It lacks complexity.", correct: false, note: "JUDICIAL VERDICT: Yes. It contains the same essential information and documents the same legal relationship between the debtor and the creditor." }
+                { text: "NO: It lacks complexity.", correct: false, note: "JUDICIAL VERDICT: Yes. It contains the same essential information and documents the same legal relationship between the debtor and the creditor." },
+                { text: "YES: It documents the same legal relationship.", correct: true, note: "JUDICIAL VERDICT: Yes. It contains the same essential information and documents the same legal relationship between the debtor and the creditor." }
             ]
         },
         { name: "JUDGE", text: "Justice has been served. The court is adjourned." }
@@ -245,25 +240,9 @@
             clearInterval(typeIntv);
             document.getElementById('text').innerHTML = fullTxt;
             isTyping = false;
-            if (gameState === "choice_typing") { gameState = "choices"; showChoices(); startTimer(); }
+            if (gameState === "choice_typing") { gameState = "choices"; showChoices(); }
             else if (gameState === "ruling_typing") { gameState = "waiting"; }
         }
-    }
-
-    function startTimer() {
-        const bar = document.getElementById('timer-bar');
-        document.getElementById('timer-container').style.display = 'block';
-        timeLeft = 100;
-        timerInterval = setInterval(() => {
-            timeLeft -= 1.0; bar.style.width = timeLeft + "%";
-            if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeOut(); }
-        }, 100);
-    }
-
-    function handleTimeOut() {
-        health -= 25; document.getElementById('health-bar').style.width = Math.max(0, health) + "%";
-        if (health <= 0) endGame(false);
-        else renderRuling("REJECTED", "Silence is not an option! The Court requires an answer.");
     }
 
     function updateUI(name) {
@@ -274,7 +253,6 @@
         tag.innerText = name;
         pla.classList.remove('active'); def.classList.remove('active'); jFrame.classList.remove('active');
         
-        // Colors mapped correctly to Case I (Player is Plaintiff)
         if (name === "JUDGE") { tag.style.background = "var(--judge-purple)"; if (!jFrame.classList.contains('active')) playBlip(); jFrame.classList.add('active'); }
         else if (name === "PLAINTIFF") { tag.style.background = "var(--pla-gold)"; if (!pla.classList.contains('active')) playBlip(); pla.classList.add('active'); }
         else { tag.style.background = "var(--def-blue)"; if (!def.classList.contains('active')) playBlip(); def.classList.add('active'); }
@@ -298,7 +276,7 @@
     }
 
     function handleChoice(c) {
-        clearInterval(timerInterval); document.getElementById('timer-container').style.display = 'none'; document.getElementById('choices').style.display = 'none';
+        document.getElementById('choices').style.display = 'none';
         const verdict = c.correct ? "AFFIRMED" : "REJECTED";
         if (!c.correct) health -= 25; else score += 1000;
         document.getElementById('health-bar').style.width = Math.max(0, health) + "%"; document.getElementById('score-val').innerText = score;
@@ -356,7 +334,7 @@
             updateUI(script[currentIdx].name);
             if(script[currentIdx].choices) gameState = "choice_typing"; else gameState = "waiting";
             typeWriter(script[currentIdx].text, () => {
-                if(script[currentIdx].choices) { gameState = "choices"; showChoices(); startTimer(); }
+                if(script[currentIdx].choices) { gameState = "choices"; showChoices(); }
             });
         } else endGame(true);
     }
@@ -389,4 +367,3 @@
 </script>
 </body>
 </html>
-
