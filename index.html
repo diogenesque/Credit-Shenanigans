@@ -42,7 +42,7 @@
             text-transform: uppercase; letter-spacing: 8px;
             margin-bottom: 20px; text-shadow: 0 0 20px var(--elden-glow);
             border-left: 5px solid var(--elden-gold); padding-left: 25px;
-            user-select: none; /* Prevents text highlighting when clicking the secret override */
+            user-select: none;
         }
 
         .btn-elden {
@@ -58,16 +58,52 @@
             transform: translateX(20px);
         }
 
-        /* Credits Modal Design */
-        #modal-overlay {
+        /* Modal Overlays Base */
+        .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); z-index: 1000;
+            z-index: 1000; justify-content: center; align-items: center;
+        }
+
+        /* Credits Specific styling */
+        #credits-overlay {
+            background: rgba(0, 0, 0, 0.9);
         }
 
         #credits-box {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 400px; border: 1px solid var(--elden-gold); background: #050505;
             padding: 40px; text-align: center; box-shadow: 0 0 40px #000;
+        }
+
+        /* Rulebook Specific styling */
+        #rules-overlay {
+            background: rgba(0, 0, 0, 0.7); 
+            backdrop-filter: blur(4px); 
+        }
+
+        #rules-box {
+            width: 700px; border: 2px solid var(--elden-gold); 
+            background: rgba(10, 10, 10, 0.85); 
+            padding: 40px; box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            color: #ccc; line-height: 1.6; text-align: center;
+        }
+
+        #rules-box h2 {
+            color: var(--elden-gold); letter-spacing: 4px; text-align: center;
+            text-transform: uppercase; margin-top: 0; font-size: 2rem;
+            text-shadow: 0 0 10px var(--elden-glow);
+        }
+
+        .rule-list {
+            list-style: none; padding: 0; margin: 20px 0; text-align: left;
+        }
+
+        .rule-list li {
+            margin-bottom: 12px; font-size: 1.05rem;
+            border-left: 2px solid var(--elden-gold); padding-left: 15px;
+        }
+
+        .rule-list strong {
+            color: #fff; letter-spacing: 1px;
         }
 
         .close-link {
@@ -81,62 +117,6 @@
             background: var(--elden-gold);
             color: #000;
         }
-
-        /* Rulebook Modal Design */
-        #rules-overlay {
-            display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); 
-            backdrop-filter: blur(4px); 
-            z-index: 5000; justify-content: center; align-items: center;
-        }
-
-        #rules-box {
-            width: 700px; border: 2px solid var(--elden-gold); 
-            background: rgba(10, 10, 10, 0.85); 
-            padding: 40px; box-shadow: 0 0 50px rgba(0,0,0,0.9);
-            color: #ccc; line-height: 1.6;
-        }
-
-        #rules-box h2 {
-            color: var(--elden-gold); letter-spacing: 4px; text-align: center;
-            text-transform: uppercase; margin-top: 0; font-size: 2rem;
-            text-shadow: 0 0 10px var(--elden-glow);
-        }
-
-        .rule-list {
-            list-style: none; padding: 0; margin: 20px 0;
-        }
-
-        .rule-list li {
-            margin-bottom: 12px; font-size: 1.05rem;
-            border-left: 2px solid var(--elden-gold); padding-left: 15px;
-        }
-
-        .rule-list strong {
-            color: #fff; letter-spacing: 1px;
-        }
-
-        /* Countdown & Lock Elements */
-        #lock-container {
-            text-align: center; margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;
-        }
-
-        #countdown-text {
-            color: #aa4444; font-size: 1.2rem; font-weight: bold; letter-spacing: 2px;
-        }
-
-        #enter-game-btn {
-            display: none; 
-            background: var(--elden-gold); color: #000; border: none;
-            padding: 12px 30px; font-size: 1.2rem; font-weight: bold;
-            text-transform: uppercase; letter-spacing: 3px; cursor: pointer;
-            transition: 0.3s; font-family: 'Georgia', serif;
-        }
-
-        #enter-game-btn:hover {
-            box-shadow: 0 0 20px var(--elden-glow);
-            transform: scale(1.05);
-        }
     </style>
 </head>
 <body onclick="initAudio()">
@@ -145,8 +125,15 @@
         <source src="menu/menubgm.mp3" type="audio/mpeg">
     </audio>
 
-    <div id="rules-overlay">
-        <div id="rules-box">
+    <div id="menu-container">
+        <div class="title-main">CREDIT SHENANIGANS</div>
+        <button class="btn-elden" onclick="location.href='ActI/ActI.html'">Start Case I</button>
+        <button class="btn-elden" onclick="toggleCredits(true)">Credits</button>
+        <button class="btn-elden" onclick="toggleRules(true)">Rulebook</button>
+    </div>
+
+    <div id="rules-overlay" class="modal-overlay" onclick="toggleRules(false)">
+        <div id="rules-box" onclick="event.stopPropagation()">
             <h2>Rules of the Court</h2>
             <ul class="rule-list">
                 <li><strong>1.</strong> Each group will be assigned specific cases to litigate.</li>
@@ -158,21 +145,11 @@
                 <li><strong>7.</strong> If the active player fails to answer within 10 seconds, opposing groups may steal the question for 500 points. The floor is given to the first person to visibly raise their hand.</li>
                 <li style="color: var(--elden-gold);"><strong style="color: var(--elden-gold);">8.</strong> The victorious group with the highest total score will be awarded a cash prize of ₱350 🤑</li>
             </ul>
-            
-            <div id="lock-container">
-                <div id="countdown-text">Trial commences in: Calculating...</div>
-                <button id="enter-game-btn" onclick="dismissRules()">ENTER COURTROOM</button>
-            </div>
+            <div class="close-link" onclick="toggleRules(false)">RETURN</div>
         </div>
     </div>
 
-    <div id="menu-container">
-        <div class="title-main" onclick="secretOverride()">CREDIT SHENANIGANS</div>
-        <button class="btn-elden" onclick="location.href='ActI/ActI.html'">Start Case I</button>
-        <button class="btn-elden" onclick="toggleCredits(true)">Credits</button>
-    </div>
-
-    <div id="modal-overlay" onclick="toggleCredits(false)">
+    <div id="credits-overlay" class="modal-overlay" onclick="toggleCredits(false)">
         <div id="credits-box" onclick="event.stopPropagation()">
             <h2 style="color: var(--elden-gold); letter-spacing: 5px;">Group 3</h2>
             <div style="height: 1px; background: var(--elden-gold); margin: 20px 0;"></div>
@@ -192,9 +169,6 @@
     <script>
         let audioStarted = false;
         const bgm = document.getElementById('menuBgm');
-        let overrideActive = false;
-        let clickCount = 0;
-        let clickTimer;
 
         function initAudio() {
             if (!audioStarted) {
@@ -205,65 +179,14 @@
             }
         }
 
+        // Functions to open and close specific modals
         function toggleCredits(show) {
-            document.getElementById('modal-overlay').style.display = show ? 'block' : 'none';
+            document.getElementById('credits-overlay').style.display = show ? 'flex' : 'none';
         }
 
-        function dismissRules() {
-            document.getElementById('rules-overlay').style.display = 'none';
+        function toggleRules(show) {
+            document.getElementById('rules-overlay').style.display = show ? 'flex' : 'none';
         }
-
-        // Secret Override Function (Click Title 3 Times)
-        function secretOverride() {
-            clickCount++;
-            clearTimeout(clickTimer);
-            
-            if (clickCount >= 3) {
-                overrideActive = true;
-                document.getElementById('countdown-text').style.display = 'none';
-                document.getElementById('enter-game-btn').style.display = 'inline-block';
-                clickCount = 0; // Reset
-            } else {
-                clickTimer = setTimeout(() => { clickCount = 0; }, 1000); // Reset if clicks are too slow
-            }
-        }
-
-        // Live Countdown Logic for 6:30 PM
-        function updateCountdown() {
-            if (overrideActive) return; // Stop updating if override is triggered
-
-            const now = new Date();
-            const targetTime = new Date();
-            
-            // Set target time to 6:30 PM (18:30:00) today
-            targetTime.setHours(18, 30, 0, 0);
-
-            const countdownEl = document.getElementById('countdown-text');
-            const btnEl = document.getElementById('enter-game-btn');
-
-            if (now >= targetTime) {
-                // Time has passed 6:30 PM - unlock the game
-                countdownEl.style.display = 'none';
-                btnEl.style.display = 'inline-block';
-            } else {
-                // Still waiting - calculate time remaining
-                const diff = targetTime - now;
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                
-                // Add leading zeros to minutes and seconds for better formatting
-                const formattedMins = minutes < 10 ? '0' + minutes : minutes;
-                const formattedSecs = seconds < 10 ? '0' + seconds : seconds;
-
-                countdownEl.innerText = `Trial commences in: ${hours}:${formattedMins}:${formattedSecs}`;
-            }
-        }
-
-        // Run the timer every second
-        setInterval(updateCountdown, 1000);
-        updateCountdown(); // Call immediately on load
     </script>
 </body>
 </html>
-
